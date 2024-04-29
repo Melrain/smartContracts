@@ -60,4 +60,16 @@ contract MyNft is
     {
         return super.supportsInterface(interfaceId);
     }
+
+    // return a list of NFTs owned by an address
+    function tokensOfOwner(
+        address owner
+    ) public view returns (uint256[] memory) {
+        uint256 tokenCount = balanceOf(owner);
+        uint256[] memory result = new uint256[](tokenCount);
+        for (uint256 i = 0; i < tokenCount; i++) {
+            result[i] = tokenOfOwnerByIndex(owner, i);
+        }
+        return result;
+    }
 }

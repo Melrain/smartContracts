@@ -23,7 +23,7 @@ contract Tyrants is
     ) ERC721("Tyrants", "TYRANT") Ownable(initialOwner) {}
 
     function _baseURI() internal pure override returns (string memory) {
-        return "https://s3.filebase.com";
+        return "";
     }
 
     function safeMint(address to, string memory uri) public onlyOwner {

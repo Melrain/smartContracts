@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 /// @custom:security-contact melrainye20200919@gmail.com
-contract MyToken is
+contract Tyrants_NFT is
     ERC721,
     ERC721Enumerable,
     ERC721URIStorage,
@@ -20,7 +20,7 @@ contract MyToken is
 
     constructor(
         address initialOwner
-    ) ERC721("MyToken", "MTK") Ownable(initialOwner) {}
+    ) ERC721("Tyrants_NFT", "TYR") Ownable(initialOwner) {}
 
     function safeMint(address to, string memory uri) public onlyOwner {
         uint256 tokenId = _nextTokenId++;
@@ -29,7 +29,7 @@ contract MyToken is
     }
 
     function _baseURI() internal pure override returns (string memory) {
-        return "https://s3.filebase.com";
+        return "";
     }
 
     // The following functions are overrides required by Solidity.

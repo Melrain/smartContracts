@@ -3,11 +3,19 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract StoneCoin is ERC20, ERC20Burnable, ERC20Permit {
-    constructor() ERC20("StoneCoin", "STONE") ERC20Permit("StoneCoin") {
-        _mint(msg.sender, 20000000 * 10 ** decimals());
+contract StoneCoin is ERC20, Ownable, ERC20Permit {
+    constructor(address initialOwner)
+        ERC20("StoneCoin", "Stone")
+        Ownable(initialOwner)
+        ERC20Permit("StoneCoin")
+    {
+        _mint(msg.sender, 1000000 * 10 ** decimals());
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
     }
 }

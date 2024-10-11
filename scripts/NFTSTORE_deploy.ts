@@ -5,7 +5,7 @@ async function main() {
   console.log(`Deploying contracts with the account: ${deployer.address}`);
 
   const NFTSTORE = await ethers.getContractFactory('NFTSTORE');
-  const nftStore = await NFTSTORE.deploy('0xD94e9ac67dcA7F8A1157ca013D975e5aCd22E206');
+  const nftStore = await NFTSTORE.deploy({ from: '0xD94e9ac67dcA7F8A1157ca013D975e5aCd22E206' });
   nftStore.deploymentTransaction()?.wait();
 
   console.log(`NFTMarketplace address: ${nftStore.target}`);

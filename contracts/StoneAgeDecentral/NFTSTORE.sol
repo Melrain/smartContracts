@@ -8,6 +8,7 @@ contract NFTSTORE is ERC721URIStorage {
     uint256 public totalItemsSold;
     address payable public marketplaceOwner;
     bool private locked;
+    uint256[] private listedTokenIds;
 
     struct NFTListing {
         uint256 tokenId;
@@ -71,6 +72,8 @@ contract NFTSTORE is ERC721URIStorage {
         listing.seller = seller;
         listing.isListed = true;
 
+        listedTokenIds.push(tokenId);
+
         emit TokenListed(tokenId, price);
     }
 
@@ -107,12 +110,17 @@ contract NFTSTORE is ERC721URIStorage {
         ownerToTokenIds[msg.sender].push(tokenId);
 
         uint256 listingFee = (price * listingFeePercent) / 100;
-
-        // Ensure successful transfers
-        // Transfer listing fee to marketplace owner
         safeTransferETH(marketplaceOwner, listingFee);
-        // Transfer the remaining amount to seller
         safeTransferETH(seller, msg.value - listingFee);
+
+        // Remove from listedTokenIds
+        for (uint256 i = 0; i < listedTokenIds.length; i++) {
+            if (listedTokenIds[i] == tokenId) {
+                listedTokenIds[i] = listedTokenIds[listedTokenIds.length - 1];
+                listedTokenIds.pop();
+                break;
+            }
+        }
 
         emit TokenSold(tokenId, msg.sender, price);
     }
@@ -132,6 +140,12 @@ contract NFTSTORE is ERC721URIStorage {
 
     function getMyTokens() public view returns (uint256[] memory) {
         return ownerToTokenIds[msg.sender];
+    }
+
+    function getTokenByTokenId(
+        uint256 tokenId
+    ) public view returns (NFTListing memory) {
+        return tokenIdToListing[tokenId];
     }
 
     function getMyListedTokens() public view returns (NFTListing[] memory) {
@@ -164,20 +178,16 @@ contract NFTSTORE is ERC721URIStorage {
         uint256 totalItemCount = 0;
         uint256 currentIndex = 0;
 
-        // Get the total number of listed NFTs
-        for (uint256 i = 0; i < ownerToTokenIds[marketplaceOwner].length; i++) {
-            uint256 tokenId = ownerToTokenIds[marketplaceOwner][i];
-            if (tokenIdToListing[tokenId].isListed) {
+        for (uint256 i = 0; i < listedTokenIds.length; i++) {
+            if (tokenIdToListing[listedTokenIds[i]].isListed) {
                 totalItemCount++;
             }
         }
 
-        // Create an array for listed NFTs
         NFTListing[] memory items = new NFTListing[](totalItemCount);
-        for (uint256 i = 0; i < ownerToTokenIds[marketplaceOwner].length; i++) {
-            uint256 tokenId = ownerToTokenIds[marketplaceOwner][i];
-            if (tokenIdToListing[tokenId].isListed) {
-                items[currentIndex] = tokenIdToListing[tokenId];
+        for (uint256 i = 0; i < listedTokenIds.length; i++) {
+            if (tokenIdToListing[listedTokenIds[i]].isListed) {
+                items[currentIndex] = tokenIdToListing[listedTokenIds[i]];
                 currentIndex++;
             }
         }

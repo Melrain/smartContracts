@@ -9,6 +9,7 @@ contract NFTSTORE is ERC721URIStorage {
     address payable public marketplaceOwner;
     bool private locked;
     uint256[] private listedTokenIds;
+    uint256[] private allTokenIds; // To track all token IDs
 
     struct NFTListing {
         uint256 tokenId;
@@ -23,6 +24,7 @@ contract NFTSTORE is ERC721URIStorage {
     event TokenCreated(uint256 tokenId, uint256 price);
     event TokenListed(uint256 tokenId, uint256 price);
     event TokenSold(uint256 tokenId, address buyer, uint256 price);
+    event TokenUnlisted(uint256 tokenId);
 
     modifier onlyOwner() {
         require(
@@ -54,6 +56,7 @@ contract NFTSTORE is ERC721URIStorage {
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, tokenURI);
 
+        allTokenIds.push(tokenId);
         ownerToTokenIds[msg.sender].push(tokenId);
 
         _listToken(tokenId, price, payable(msg.sender));
@@ -85,6 +88,27 @@ contract NFTSTORE is ERC721URIStorage {
         require(price > 0, "Price must be greater than zero");
 
         _listToken(tokenId, price, payable(msg.sender));
+    }
+
+    function unlistToken(uint256 tokenId) public {
+        require(
+            ownerOf(tokenId) == msg.sender,
+            "You are not the owner of this token"
+        );
+        require(tokenIdToListing[tokenId].isListed, "Token is not listed");
+
+        tokenIdToListing[tokenId].isListed = false;
+
+        // Remove from listedTokenIds
+        for (uint256 i = 0; i < listedTokenIds.length; i++) {
+            if (listedTokenIds[i] == tokenId) {
+                listedTokenIds[i] = listedTokenIds[listedTokenIds.length - 1];
+                listedTokenIds.pop();
+                break;
+            }
+        }
+
+        emit TokenUnlisted(tokenId);
     }
 
     function executeSale(uint256 tokenId) public payable noReentrancy {
@@ -195,6 +219,10 @@ contract NFTSTORE is ERC721URIStorage {
         return items;
     }
 
+    function getAllTokens() public view returns (uint256[] memory) {
+        return allTokenIds;
+    }
+
     function isTokenListed(uint256 tokenId) public view returns (bool) {
         return tokenIdToListing[tokenId].isListed;
     }
@@ -233,5 +261,40 @@ contract NFTSTORE is ERC721URIStorage {
         }
 
         ownerToTokenIds[from].pop();
+    }
+
+    function transferTokenTo(address from, address to, uint256 tokenId) public {
+        require(
+            ownerOf(tokenId) == from,
+            "Sender is not the owner of this token"
+        );
+        require(
+            msg.sender == from || isApprovedForAll(from, msg.sender),
+            "Caller is not owner nor approved"
+        );
+        require(
+            !tokenIdToListing[tokenId].isListed,
+            "Token is currently listed and cannot be transferred"
+        );
+
+        _transfer(from, to, tokenId);
+
+        // Update the owner to token IDs mapping
+        _removeTokenFromOwnerEnumeration(from, tokenId);
+        ownerToTokenIds[to].push(tokenId);
+    }
+
+    function createTokenToAddress(
+        uint256 tokenId,
+        string memory tokenURI,
+        address receiver
+    ) public onlyOwner {
+        _mint(receiver, tokenId);
+        _setTokenURI(tokenId, tokenURI);
+
+        allTokenIds.push(tokenId);
+        ownerToTokenIds[receiver].push(tokenId);
+
+        emit TokenCreated(tokenId, 0); // Price is 0 as it's not listed
     }
 }
